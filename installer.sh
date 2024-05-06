@@ -81,7 +81,7 @@ save_old_env(){
 }
 
 write_env(){
-  local SUPER_PW="embark"
+  local SUPER_PW=$(openssl rand -base64 8)
   local SUPER_EMAIL="idk@lol.com"
   local SUPER_USER="superuser"
   local RANDOM_PW=""
@@ -112,6 +112,9 @@ write_env(){
     DJANGO_SECRET_KEY=$(python3.10 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
     RANDOM_PW=$(openssl rand -base64 12)
   fi
+  # reasonably secure credentials
+  SUPER_PW=$(openssl rand -base64 12)
+  SUPER_USER+="_$(openssl rand -base64 3)"
 
   echo -e "${ORANGE}""${BOLD}""Creating a EMBArk configuration file .env""${NC}"
   {
