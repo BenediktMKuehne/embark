@@ -76,6 +76,9 @@ class LogReader:
             self.cleanup()
 
     def save_status(self):
+        update_docker_pattern = ""
+        outdated_pattern = ""
+
         logger.debug("Appending status with message: %s", self.status_msg)
         # append message to the json-field structure of the analysis
         self.analysis.status["percentage"] = self.status_msg["percentage"]
@@ -100,6 +103,12 @@ class LogReader:
                 "message": {str(self.analysis.id): self.analysis.status}
             }
         )
+
+        # TODO add labels on special outputs
+        for phase_ in self.analysis.status["phase_list"]:
+            if re.search(update_docker_pattern ,phase_):
+                self.analysis.label.add(new_label)
+            elif re.search(outdated_pattern , phase_):
 
     @staticmethod
     def phase_identify(status_message):
