@@ -258,20 +258,20 @@ install_debs(){
     # Add Docker's official GPG key:
     apt-get install -y ca-certificates curl gnupg
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
     # Add the repository to Apt sources:
     # shellcheck source=/dev/null
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" | \
-      tee /etc/apt/sources.list.d/docker.list > /dev/null
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
     apt-get update -y
     apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   fi
   # alias for compose to stay backwards comp
-  if docker --help | grep -q compose; then
-    alias docker-compose="docker compose"
+  if ! command -v docker-compose > /dev/null ; then
+    if docker --help | grep -q compose; then
+      alias docker-compose="docker compose"
+    fi
   fi
   # python3-dev
   if ! dpkg -l python3.10-dev &>/dev/null; then
@@ -387,7 +387,7 @@ install_embark_default(){
 
   # write env-vars into ./.env
   write_env
-  echo "EMBARK_INSTALL=deploy" > ./.env
+  echo "EMBARK_INSTALL=deploy" >> ./.env
 
   if [[ "${WSL}" -eq 1 ]]; then
     check_docker_wsl
@@ -469,7 +469,7 @@ install_embark_dev(){
 
   # write env-vars into ./.env
   write_env
-  echo "EMBARK_INSTALL=dev" > ./.env
+  echo "EMBARK_INSTALL=dev" >> ./.env
   chmod 644 .env
 
   # download images for container
