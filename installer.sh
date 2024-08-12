@@ -42,6 +42,8 @@ print_help(){
   echo -e "\\n""${CYAN}""USAGE""${NC}"
   echo -e "${CYAN}-h${NC}         Print this help message"
   echo -e "${CYAN}-d${NC}         EMBArk default installation"
+  echo -e "${CYAN}-ld${NC}        Local Installation without orchestration (use in combination with d/F)" # TODO
+  echo -e "---------------------------------------------------------------------------"
   echo -e "${CYAN}-F${NC}         Installation of EMBArk for developers"
   echo -e "${CYAN}-e${NC}         Install EMBA only"
   echo -e "${CYAN}-s${NC}         Installation without EMBA (use in combination with d/F)"
@@ -173,6 +175,16 @@ install_emba_src(){
   fi
   chown -R "${SUDO_USER:-${USER}}" emba
   echo -e "\n""--------------------------------------------------------------------""${NC}"
+}
+
+install_orchistration(){
+  echo -e "${ORANGE}""${BOLD}""Creating orchistration Back-end for EMBArk""${NC}"
+  # 1. ssh key for the www-embark user
+  # 2. create an app to add hosts to the worker crew
+  # 3. change bounded exec emba command to ssh that onto the remote
+  # 4. use sshfs to mount the logs into the right dir (RO!)
+  # 5. when finished we unmount and move them
+  # (check if sshfs works on lo)
 }
 
 create_ca (){
@@ -716,7 +728,7 @@ install_debs
 # mark dir as safe for git
 sudo -u "${SUDO_USER:-${USER}}" git config --global --add safe.directory "${PWD}"
 
-if [[ "${NO_EMBA}" -eq 0 ]]; then
+if [[ "${NO_EMBA}" -eq 0  || "${LOCAL_INSTALL}" -eq 1 ]]; then
   # use git or release
   if [[ "${NO_GIT}" -eq 1 ]]; then
     install_emba_src
