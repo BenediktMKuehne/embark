@@ -32,7 +32,7 @@ from porter.importer import result_read_in
 logger = logging.getLogger(__name__)
 
 # maximum concurrent running workers
-MAX_WORKERS = 4
+MAX_WORKERS = settings.WORKER_COUNT * 4
 # maximum queue bound
 MAX_QUEUE = MAX_WORKERS
 
@@ -55,6 +55,9 @@ class BoundedExecutor:
     This class is a wrapper of ExecuterThreadPool to enable a limited queue
     Used to handle concurrent emba analysis as well as emba.log analyzer
     """
+    def __init__(self) -> None:
+        # TODO read in workers.json
+        pass
 
     @classmethod
     def run_emba_cmd(cls, cmd, analysis_id=None, active_analyzer_dir=None):
@@ -156,7 +159,7 @@ class BoundedExecutor:
             logger.error("kill_emba_cmd error: %s", exce)
 
     @classmethod
-    def submit_kill(cls, uuid):
+    def submit_kill(cls, uuid):     # TODO move function
         # submit command to executor threadpool
         emba_fut = BoundedExecutor.submit(cls.kill_emba_cmd, uuid)
         analysis = FirmwareAnalysis.objects.get(id=uuid)
@@ -167,7 +170,7 @@ class BoundedExecutor:
         return emba_fut
 
     @classmethod
-    def submit_firmware(cls, firmware_flags, firmware_file):
+    def submit_firmware(cls, firmware_flags, firmware_file):    # TODO move function
         """
         submit firmware + metadata for emba execution
 
@@ -410,7 +413,7 @@ class BoundedExecutor:
         return emba_fut
 
     @classmethod
-    def submit_emba_check(cls, option):
+    def submit_emba_check(cls, option):     # TODO move function
         # submit dep check to executor threadpool
         emba_fut = BoundedExecutor.submit(cls.emba_check, option)
         return emba_fut

@@ -20,6 +20,7 @@ STRICT_MODE=0
 export DEBIAN_FRONTEND=noninteractive
 
 export HELP_DIR='helper'
+export EMBARK_SSH_KEY="/var/www/.ssh/embark_ssh_cluster_key"
 
 export REFORCE=0
 export UNINSTALL=0
@@ -132,6 +133,7 @@ write_env(){
     echo "DJANGO_SUPERUSER_EMAIL=${SUPER_EMAIL}"
     echo "DJANGO_SUPERUSER_PASSWORD=${SUPER_PW}"
     echo "PYTHONPATH=${PWD}:${PWD}/embark:/var/www/:/var/www/embark"
+    echo "EMBARK_SSH_KEY=${EMBARK_SSH_KEY}"
   } > .env
   chmod 600 .env
 }
@@ -180,11 +182,22 @@ install_emba_src(){
 install_orchistration(){
   echo -e "${ORANGE}""${BOLD}""Creating orchistration Back-end for EMBArk""${NC}"
   # 1. ssh key for the www-embark user
+  if [[ ! -f "${EMBARK_SSH_KEY}" ]]; then
+    print_output "[*] Gnerating SSH keys ${EMBARK_SSH_KEY} locally" "no_log"
+    if [[ ! -d "$( dirname "${EMBARK_SSH_KEY}" )" ]]; then
+      mkdir "$( dirname "${EMBARK_SSH_KEY}" )"
+    fi
+    ssh-keygen -t ed25519 -C "EMBArk cluster access" -f "${EMBARK_SSH_KEY}"  -q -P ""
+  else
+    print_output "[*] Using found SSH keys ${EMBARK_SSH_KEY}" "no_log"
+  fi
   # 2. create an app to add hosts to the worker crew
   # 3. change bounded exec emba command to ssh that onto the remote
   # 4. use sshfs to mount the logs into the right dir (RO!)
   # 5. when finished we unmount and move them
   # (check if sshfs works on lo)
+
+  # create openssh server on localhost
 }
 
 create_ca (){
@@ -728,13 +741,14 @@ install_debs
 # mark dir as safe for git
 sudo -u "${SUDO_USER:-${USER}}" git config --global --add safe.directory "${PWD}"
 
-if [[ "${NO_EMBA}" -eq 0  || "${LOCAL_INSTALL}" -eq 1 ]]; then
+if [[ "${NO_EMBA}" -eq 0 ]]; then
   # use git or release
   if [[ "${NO_GIT}" -eq 1 ]]; then
     install_emba_src
   else
     install_emba
   fi
+  echo '{"workers": { "localhost": {"ip": "127.0.0.1"}}}' | jq . > workers.json
 fi
 if [[ "${EMBA_ONLY}" -eq 1 ]]; then
   exit 0

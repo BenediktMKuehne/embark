@@ -6,6 +6,7 @@ __copyright__ = 'Copyright 2021-2024 Siemens Energy AG'
 __author__ = 'Benedikt Kuehne'
 __license__ = 'MIT'
 
+import json
 from pathlib import Path
 import os
 import pytz
@@ -29,6 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # HASHID_FIELD_ENABLE_DESCRIPTOR = os.environ.get('HASHID_FIELD_ENABLE_DESCRIPTOR', False)
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
+LOCAL_INSTALL = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
@@ -313,3 +315,6 @@ except FileNotFoundError as file_error:
     EMBA_S_MOD_CNT, EMBA_P_MOD_CNT, EMBA_Q_MOD_CNT, EMBA_L_MOD_CNT, EMBA_F_MOD_CNT, EMBA_D_MOD_CNT = 46, 20, 1, 10, 6, 3
 
 VERSION = get_version_strings()
+
+WORKERS = json.load(os.path.join(BASE_DIR, 'workers.json'))  # TODO check this
+WORKER_COUNT = 1 # TODO count WORKERS
