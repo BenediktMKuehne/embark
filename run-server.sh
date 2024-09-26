@@ -203,7 +203,7 @@ export PIPENV_VERBOSITY=-1
 if ! [[ -d /var/www/logs ]]; then
   mkdir /var/www/logs
 fi
-
+# ssh key
 if [[ ! -f "${EMBARK_SSH_KEY}" ]]; then
   echo "[-] EMBA SSH key not found"
 fi

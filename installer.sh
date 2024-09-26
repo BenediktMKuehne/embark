@@ -181,7 +181,16 @@ install_emba_src(){
 
 install_orchistration(){
   echo -e "${ORANGE}""${BOLD}""Creating orchistration Back-end for EMBArk""${NC}"
-  # 1. ssh key for the www-embark user
+  # 1. create user for login
+    # Add user for login TODO
+    if ! cut -d: -f1 /etc/passwd | grep -E www-embark ; then
+      useradd ssh-embark -G sudo -c "embark-orchistration-user" -M -r -d /home/embark
+    fi
+    # emba nopw
+    if ! grep 'ssh-embark ALL=(ALL) NOPASSWD: /var/www/emba/emba' /etc/sudoers ; then
+      echo 'ssh-embark ALL=(ALL) NOPASSWD: /var/www/emba/emba' | EDITOR='tee -a' visudo
+    fi
+  # 2. ssh key for the ssh-embark user
   if [[ ! -f "${EMBARK_SSH_KEY}" ]]; then
     print_output "[*] Gnerating SSH keys ${EMBARK_SSH_KEY} locally" "no_log"
     if [[ ! -d "$( dirname "${EMBARK_SSH_KEY}" )" ]]; then
@@ -748,7 +757,8 @@ if [[ "${NO_EMBA}" -eq 0 ]]; then
   else
     install_emba
   fi
-  echo '{"workers": { "localhost": {"ip": "127.0.0.1"}}}' | jq . > workers.json
+  echo '{"workers": { "localhost": {"ip": "127.0.0.1", "port": "22", \
+  "username": "ssh-embark", "emba-dir": "/var/www/emba/", "report-dir": "/var/www/emba-logs"}}}' | jq . > workers.json
 fi
 if [[ "${EMBA_ONLY}" -eq 1 ]]; then
   exit 0
