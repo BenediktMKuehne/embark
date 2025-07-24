@@ -79,7 +79,7 @@ paths:
                     type: string
               required:
                 - file
-  /status_report/{analysis_id}:
+  /api/status_report/{analysis_id}:
     get:
       tags:
         - Status report
@@ -170,7 +170,7 @@ paths:
                   error:
                     type: string
                     example: "The analysis with the provided UUID doesn't exist."
-  /user/api_test:
+  /api/api_test:
     get:
       tags:
         - API Test
