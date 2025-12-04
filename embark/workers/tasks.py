@@ -25,7 +25,8 @@ from django.utils.timezone import make_aware
 from django.utils import timezone
 from django.conf import settings
 
-from embark.helper import is_ip_local_host
+from embark.helper import is_ip_local_host, get_size
+from uploader.archiver import Archiver
 from workers.models import Worker, Configuration, DependencyVersion, DependencyType, WorkerDependencyVersion
 from workers.update.dependencies import eval_outdated_dependencies, get_script_name, update_dependency, setup_dependency
 from workers.update.update import exec_blocking_ssh, parse_deb_list, process_update_queue, init_sudoers_file, update_dependencies_info, setup_ssh_key, undo_ssh_key, undo_sudoers_file
@@ -52,6 +53,11 @@ def create_periodic_tasks(**kwargs):
         interval=schedule_2m,
         name="Update Worker Information",
         task="workers.tasks.update_worker_info",
+    )
+    PeriodicTask.objects.get_or_create(
+        interval=settings.WORKER_LOG_MAX_AGE_DAYS * 24 * 60,  # Convert days to minutes
+        name="Rotate All worker logs",
+        task="workers.tasks.worker_log_rotate"
     )
 
 
@@ -890,3 +896,27 @@ def config_worker_scan_task(configuration_id: int):
         config.scan_status = Configuration.ScanStatus.ERROR
     finally:
         config.save()
+
+
+def worker_log_rotate():
+    """
+    Rotates worker log files based on settings.WORKER_LOG_MAX_AGE_DAYS
+    """
+    logger.info("Starting worker log rotation task.")
+    workers = Worker.objects.all()
+    for worker in workers:
+        try:
+            if worker.log_location and worker.log_location.exists():
+                if get_size(worker.log_location) > 200000000:  # bigger than 200 MB
+                    logger.info("Rotating log file for worker %s", worker.name)
+                    worker.write_log(f"\nRotating log file...\n")
+                    # archive old log
+                    Archiver.archive_file(worker.log_location)
+                    # delete contents of current log file
+                    with open(worker.log_location, "w", encoding="utf-8") as log_file:
+                        log_file.truncate(0)
+                    logger.info("Log file rotated for worker %s", worker.name)
+                    worker.write_log(f"\nLog file rotated.\n")
+        except Exception as error:
+            logger.error("Error rotating log file for worker %s: %s", worker.name, error)
+            worker.write_log(f"ERROR rotating log file: {error}")
