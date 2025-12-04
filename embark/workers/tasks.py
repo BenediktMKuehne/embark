@@ -103,6 +103,7 @@ def update_system_info(worker: Worker):
         if ssh_client:
             ssh_client.close()
         worker.save()
+    worker.write_log(f"\nSystem info updated: {system_info}\n")
     return system_info
 
 
@@ -778,8 +779,8 @@ def _update_or_create_worker(config: Configuration, ip_address: str):
             setup_ssh_key(config, worker)
             update_system_info(worker)
             update_dependencies_info(worker)
-        except BaseException:
-            pass
+        except BaseException as all_error:
+            worker.write_log(f"ERROR when updating worker: {all_error}")
 
 
 def _scan_for_worker(config: Configuration, ip_address: str, port: int = 22, timeout: int = 1, ssh_auth_check: bool = True) -> str:
