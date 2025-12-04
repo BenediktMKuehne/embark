@@ -72,14 +72,14 @@ def update_system_info(worker: Worker):
         os_info = exec_blocking_ssh(ssh_client, 'grep PRETTY_NAME /etc/os-release', worker.write_log)
         os_info = os_info[len('PRETTY_NAME='):-1].strip('"')
 
-        cpu_info = exec_blocking_ssh(ssh_client, 'nproc')
+        cpu_info = exec_blocking_ssh(ssh_client, 'nproc', worker.write_log)
         cpu_info = cpu_info + " cores"
 
-        ram_info = exec_blocking_ssh(ssh_client, 'free -h | grep Mem')
+        ram_info = exec_blocking_ssh(ssh_client, 'free -h | grep Mem', worker.write_log)
         ram_info = ram_info.split()[1]
         ram_info = ram_info.replace('Gi', 'GB').replace('Mi', 'MB')
 
-        disk_str = exec_blocking_ssh(ssh_client, "df -h | grep '^/'")
+        disk_str = exec_blocking_ssh(ssh_client, "df -h | grep '^/'", worker.write_log)
         disk_str = disk_str.splitlines()[0].split()
         disk_total = disk_str[1].replace('G', 'GB').replace('M', 'MB')
         disk_free = disk_str[3].replace('G', 'GB').replace('M', 'MB')
