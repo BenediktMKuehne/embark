@@ -83,7 +83,7 @@ def update_system_info(worker: Worker):
 
         ram_info = exec_blocking_ssh(ssh_client, 'free -h | grep Mem', worker.write_log)
         ram_info = ram_info.split()[1]
-        ram_info = ram_info.replace('Gi', 'GB').replace('Mi', 'MB')
+        ram_info = ram_info.replace('Gi', 'GiB').replace('Mi', 'MiB')
 
         disk_str = exec_blocking_ssh(ssh_client, "df -h | grep '^/'", worker.write_log)
         disk_str = disk_str.splitlines()[0].split()

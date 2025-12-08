@@ -13,25 +13,28 @@
 # Contributor(s): Benedikt Kuehne
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
-if [[ ${EUID} -ne 0 ]]; then
+if [[ "${EUID}" -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
 	exit 1
 fi
 
 echo -e "\n[+] Starting EMBA Docker image preparation script"
-echo -e "[*] Output Directory: $1"
-echo -e "[*] ZIP Output Path: $2"
-echo -e "[*] Version: $3\n"
+echo -e "[*] Output Directory: ${1}"
+echo -e "[*] ZIP Output Path: ${2}"
+echo -e "[*] Version: ${3}\n"
 
-FILEPATH="$1"
-ZIPPATH="$2"
-VERSION="$3"
-IS_UBUNTU=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-[[ ${IS_UBUNTU} == "Ubuntu" ]] && IS_UBUNTU=true || IS_UBUNTU=false
-
-echo -e "[*] Detected OS: ${IS_UBUNTU}"
+FILEPATH="${1}"
+ZIPPATH="${2}"
+VERSION="${3}"
+# shellcheck disable=SC1091 # No need to validate /etc/os-release
+lOS_ID="$(source /etc/os-release; echo "${ID}")"
+echo -e "[*] Detected OS: ${lOS_ID}"
+IS_UBUNTU=false
+if [[ "${lOS_ID}" == "ubuntu" ]]; then
+  IS_UBUNTU=true
+fi
 
 ### Reset
 echo -e "\n[*] Cleaning up previous EMBA Docker files"

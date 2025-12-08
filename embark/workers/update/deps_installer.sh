@@ -13,9 +13,9 @@
 # Contributor(s): Luka Dekanozishvili, Benedikt Kuehne
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
-if [[ ${EUID} -ne 0 ]]; then
+if [[ "${EUID}" -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
 	exit 1
 fi

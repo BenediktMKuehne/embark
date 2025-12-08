@@ -15,7 +15,7 @@
 # Description: Prepares dependency packages on the host system for worker update
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
 if [[ ${EUID} -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
@@ -23,21 +23,24 @@ if [[ ${EUID} -ne 0 ]]; then
 fi
 
 echo -e "\n[+] Starting dependency package preparation script"
-echo -e "[*] Dependency Directory: $1"
-echo -e "[*] ZIP Output Path: $2"
-echo -e "[*] Version: $3"
-echo -e "[*] Dependencies Cache: $4\n"
+echo -e "[*] Dependency Directory: ${1}"
+echo -e "[*] ZIP Output Path: ${2}"
+echo -e "[*] Version: ${3}"
+echo -e "[*] Dependencies Cache: ${4}\n"
 
-FILEPATH="$1"   # Directory to store dependency packages
-ZIPPATH="$2"  # Optional: Path to store tar.gz of dependency packages
-VERSION="$3"  # Version of dependencies to download (or "latest")
-DEPSCACHE="$4"  # Optional: Path to cache previously downloaded dependencies
+FILEPATH="${1}"   # Directory to store dependency packages
+ZIPPATH="${2}"  # Optional: Path to store tar.gz of dependency packages
+VERSION="${3}"  # Version of dependencies to download (or "latest")
+DEPSCACHE="${4}"  # Optional: Path to cache previously downloaded dependencies
 
 PKGPATH="${FILEPATH}/pkg"
-IS_UBUNTU=$(awk -F= '/^NAME/{gsub(/"/, "", $2); print $2}' /etc/os-release)
-[[ ${IS_UBUNTU} == "Ubuntu" ]] && IS_UBUNTU=true || IS_UBUNTU=false
-
-echo -e "[*] Detected OS: ${IS_UBUNTU}"
+# shellcheck disable=SC1091 # No need to validate /etc/os-release
+lOS_ID="$(source /etc/os-release; echo "${ID}")"
+echo -e "[*] Detected OS: ${lOS_ID}"
+IS_UBUNTU=false
+if [[ "${lOS_ID}" == "ubuntu" ]]; then
+  IS_UBUNTU=true
+fi
 
 function downloadPackage() {
   echo -e "[*] Downloading packages:" "$@"

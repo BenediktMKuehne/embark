@@ -13,25 +13,25 @@
 # Contributor(s): Benedikt Kuehne
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
-if [[ ${EUID} -ne 0 ]]; then
+if [[ "${EUID}" -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
 	exit 1
 fi
 
 echo -e "\n[+] Starting external data preparation script"
-echo -e "[*] Output Directory: $1"
-echo -e "[*] ZIP Output Path: $2"
-echo -e "[*] Version: $3\n"
+echo -e "[*] Output Directory: ${1}"
+echo -e "[*] ZIP Output Path: ${2}"
+echo -e "[*] Version: ${3}\n"
 
-FILEPATH="$1"
-ZIPPATH="$2"
-VERSION="$3"
+FILEPATH="${1}"
+ZIPPATH="${2}"
+VERSION="${3}"
 EXTERNALPATH="${FILEPATH}/external"
 
-NVD_VERSION=$(echo "${VERSION}" | cut -d \, -f 1)
-EPSS_VERSION=$(echo "${VERSION}" | cut -d \, -f 2)
+NVD_VERSION="$(echo "${VERSION}" | cut -d \, -f 1)"
+EPSS_VERSION="$(echo "${VERSION}" | cut -d \, -f 2)"
 
 echo -e "[*] File path: ${FILEPATH}"
 echo -e "[*] ZIP path: ${ZIPPATH}"
