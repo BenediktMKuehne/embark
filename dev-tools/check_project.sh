@@ -372,9 +372,17 @@ semgrep_check(){
   echo -e "\\n""${ORANGE}""${BOLD}""EMBArk semgrep security check""${NC}""\\n""${BOLD}""=================================================================""${NC}"
   if [[ "${FAST_EXECUTION:-0}" -eq 1 ]]; then
     mapfile -t SH_SCRIPTS < <(git status -s | grep ".*.sh$" | awk '{print $2}' | sort -u)
-    semgrep --config=p/ci --files "${SH_SCRIPTS[@]}"
+    if [[ -f ./emba/external/semgrep-rules/bash ]];then
+      semgrep --disable-version-check --metrics=off --config ./emba/external/semgrep-rules/bash --files "${SH_SCRIPTS[@]}" 2>&1
+    else
+      semgrep --config=p/ci --files "${SH_SCRIPTS[@]}"
+    fi
   else
-    semgrep --config=p/ci ./
+    if [[ -f ./emba/external/semgrep-rules/bash ]];then
+      semgrep --disable-version-check --metrics=off --config ./emba/external/semgrep-rules/bash ./embark 2>&1
+    else
+      semgrep --config=p/ci ./embark
+    fi
   fi
   RES=$?
   if [[ ${RES} -eq 0 ]]; then
@@ -406,7 +414,7 @@ list_linter_exceptions "pylint" "${PWD}/embark"
 check_django
 yamlchecker
 openapichecker
-#semgrep_check
+semgrep_check
 
 
 if [[ "$(date +%Y)" -ne 2025 ]]; then

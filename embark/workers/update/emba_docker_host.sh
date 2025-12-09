@@ -28,12 +28,17 @@ echo -e "[*] Version: ${3}\n"
 FILEPATH="${1}"
 ZIPPATH="${2}"
 VERSION="${3}"
+
 # shellcheck disable=SC1091 # No need to validate /etc/os-release
 lOS_ID="$(source /etc/os-release; echo "${ID}")"
 echo -e "[*] Detected OS: ${lOS_ID}"
 IS_UBUNTU=false
 if [[ "${lOS_ID}" == "ubuntu" ]]; then
   IS_UBUNTU=true
+  UBUNTU_CODENAME="$(source /etc/os-release; echo "${UBUNTU_CODENAME}")"
+  VERSION_CODENAME="$(source /etc/os-release; echo "${VERSION_CODENAME}")"
+  echo -e "[*] Detected Ubuntu Codename: ${UBUNTU_CODENAME}"
+  echo -e "[*] Detected Version Codename: ${VERSION_CODENAME}"
 fi
 
 ### Reset
@@ -91,7 +96,7 @@ if ! which docker &> /dev/null; then
       curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
       # shellcheck source=/dev/null
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-	    $(. /etc/os-release && echo "${UBUNTU_CODENAME}:-${VERSION_CODENAME}") stable" | \
+	    ${UBUNTU_CODENAME}:-${VERSION_CODENAME} stable" | \
 	    tee /etc/apt/sources.list.d/docker.list > /dev/null
     else
       curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
