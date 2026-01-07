@@ -121,7 +121,7 @@ paths:
                   error:
                     type: string
                     example: Missing API key
-  /api/sbom:
+  /api/sbom/{analysis_id}:
     get:
       tags:
         - API SBOM
