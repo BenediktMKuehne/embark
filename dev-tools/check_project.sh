@@ -2,7 +2,7 @@
 
 # EMBArk - The firmware security scanning environment
 #
-# Copyright 2020-2025 Siemens Energy AG
+# Copyright 2020-2026 Siemens Energy AG
 # Copyright 2020-2021 Siemens AG
 #
 # EMBArk comes with ABSOLUTELY NO WARRANTY.
@@ -417,8 +417,8 @@ openapichecker
 semgrep_check
 
 
-if [[ "$(date +%Y)" -ne 2025 ]]; then
-  copy_right_check 2025 "${PWD}" "${PWD}/emba_logs"
+if [[ "$(date +%Y)" -ne 2026 ]]; then
+  copy_right_check 2026 "${PWD}" "${PWD}/emba_logs"
 fi
 
 if [[ "${#MODULES_TO_CHECK_ARR[@]}" -gt 0 ]]; then

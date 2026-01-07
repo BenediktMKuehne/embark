@@ -2,7 +2,7 @@ openapi: 3.1.1
 info:
   title: EMBArk API
   description: API of the firmware security scanning environment
-  version: "0.2"
+  version: "0.3.0"
   license:
     name: "MIT License"
     identifier: "MIT"
@@ -17,6 +17,8 @@ tags:
     description: Status report API
   - name: API Test
     description: Test API Authentication
+  - name: API SBOM
+    description: SBOM retrieval API
 
 paths:
   /api/uploader:
@@ -79,97 +81,6 @@ paths:
                     type: string
               required:
                 - file
-  /status_report/{analysis_id}:
-    get:
-      tags:
-        - Status report
-      summary: Get analysis status report
-      description: >
-        Retrieves the report of a firmware analysis.
-
-        - If the analysis is still **running**, returns its progress
-
-        - If the analysis has **failed**, returns failure message, queues zip file generation. Returns the download link on subsequent request
-
-        - If analysis is **finished**, queues zip file generation. Returns the download link on subsequent request
-
-      operationId: getStatusReport
-      parameters:
-        - name: analysis_id
-          in: path
-          required: true
-          description: UUID of the analysis
-          schema:
-            type: string
-            format: uuid
-      security:
-        - ApiKeyAuth: []
-      responses:
-        '200':
-          description: Zip ready for download
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                finished_success:
-                  summary: Analysis finished successfully
-                  value:
-                    status: "finished"
-                    message: "Analysis finished successfully in 0:23:45."
-                    download_url: "http://example.com:8001/download_zipped/<analysis_id>"
-                failed_with_logs:
-                  summary: Analysis failed, logs available
-                  value:
-                    status: "failed"
-                    error: "Analysis failed, but logs are available."
-                    download_url: "http://example.com:8001/download_zipped/<analysis_id>"
-        '201':
-          description: Zip generation queued on success/failure
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                zipping_success:
-                  summary: Zip generation on success
-                  value:
-                    status: "finished"
-                    message: "Analysis finished successfully. The logs are being zipped and will soon be ready for download"
-                zipping_failure:
-                  summary: Zip generation on failure
-                  value:
-                    status: "failed"
-                    error: "Analysis failed. The logs are being zipped and will soon be ready for download."
-        '202':
-          description: Analysis in progress
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "running"
-                  completion:
-                    type: string
-                    example: "32.8125% finished"
-                  message:
-                    type: string
-                    example: "Analysis has been running since 2025-05-11 19:42:28.986026+00:00"
-        '404':
-          description: UUID not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "error"
-                  error:
-                    type: string
-                    example: "The analysis with the provided UUID doesn't exist."
   /user/api_test:
     get:
       tags:
@@ -210,6 +121,140 @@ paths:
                   error:
                     type: string
                     example: Missing API key
+  /api/sbom:
+    get:
+      tags:
+        - API SBOM
+      summary: Get SBOM as raw json
+      description: Returns the SBOM of a firmware analysis in raw JSON format.
+      operationId: apiSBOM
+      parameters: 
+        - name: analysis_id
+          in: path
+          required: true
+          description: UUID of the analysis
+          schema:
+            type: string
+            format: uuid
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  sbom: 
+                    type: object
+  /status_report/{analysis_id}:
+    get:
+      tags:
+        - Status report
+      summary: Get analysis status report
+      description: >
+        Retrieves the report of a firmware analysis.
+
+        - If the analysis is still **running**, returns its progress
+
+        - If the analysis has **failed**, returns failure message, queues zip file generation. Returns the download link on subsequent request
+
+        - If analysis is **finished**, queues zip file generation. Returns the download link on subsequent request
+
+      operationId: getStatusReport
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          description: UUID of the analysis
+          schema:
+            type: string
+            format: uuid
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  error:
+                    type: string
+                    example: Internal server error.
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Forbidden
+                  error:
+                    type: string
+                    example: You're not allowed to access this resource.
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: Analysis failed. The logs are being zipped and will soon be ready for download.
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  error:
+                    type: string
+                    example: The analysis with the provided UUID doesn't exist.
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: running
+                  message:
+                    type: string
+                    example: Analysis has been running since 2025-05-11 19:42:28.986026+00:00
+                  completion:
+                    type: string
+                    example: 32.8125% finished
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: finished
+                  message:
+                    type: string
+                    example: Analysis finished successfully in 0:23:45.
+                  download_url:
+                    type: string
+                    example: http://embark.local/download_zipped/<analysis_id>
 
 components:
   schemas:

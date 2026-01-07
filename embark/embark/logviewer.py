@@ -1,4 +1,4 @@
-__copyright__ = 'Copyright 2023 Christian Bieg, Copyright 2025 Siemens Energy AG'
+__copyright__ = 'Copyright 2023 Christian Bieg, Copyright 2025-2026 Siemens Energy AG'
 __author__ = 'Christian Bieg, Benedikt Kuehne'
 __license__ = 'MIT'
 
