@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# shellcheck disable=SC2031
 # EMBArk - The firmware security scanning environment
 #
 # Copyright 2025 The AMOS Projects
@@ -29,7 +29,7 @@ FILEPATH="${1}"
 ZIPPATH="${2}"
 VERSION="${3}"
 
-# shellcheck disable=SC1091 # No need to validate /etc/os-release
+# shellcheck disable=SC1091  # No need to validate /etc/os-release
 lOS_ID="$(source /etc/os-release; echo "${ID}")"
 echo -e "[*] Detected OS: ${lOS_ID}"
 IS_UBUNTU=false

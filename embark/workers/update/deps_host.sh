@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# shellcheck disable=SC2031
 # EMBArk - The firmware security scanning environment
 #
 # Copyright 2025 The AMOS Projects
