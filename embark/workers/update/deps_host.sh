@@ -34,13 +34,15 @@ VERSION="${3}"  # Version of dependencies to download (or "latest")
 DEPSCACHE="${4}"  # Optional: Path to cache previously downloaded dependencies
 
 PKGPATH="${FILEPATH}/pkg"
-# shellcheck disable=SC1091 # No need to validate /etc/os-release
+# shellcheck source=/etc/os-release
 lOS_ID="$(source /etc/os-release; echo "${ID}")"
 echo -e "[*] Detected OS: ${lOS_ID}"
 IS_UBUNTU=false
 if [[ "${lOS_ID}" == "ubuntu" ]]; then
   IS_UBUNTU=true
+  # shellcheck source=/etc/os-release
   UBUNTU_CODENAME="$(source /etc/os-release; echo "${UBUNTU_CODENAME}")"
+  # shellcheck source=/etc/os-release
   VERSION_CODENAME="$(source /etc/os-release; echo "${VERSION_CODENAME}")"
   echo -e "[*] Detected Ubuntu Codename: ${UBUNTU_CODENAME}"
   echo -e "[*] Detected Version Codename: ${VERSION_CODENAME}"
