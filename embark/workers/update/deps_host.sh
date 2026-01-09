@@ -1,9 +1,9 @@
 #!/bin/bash
-
+# shellcheck disable=SC2031
 # EMBArk - The firmware security scanning environment
 #
 # Copyright 2025 The AMOS Projects
-# Copyright 2025 Siemens Energy AG
+# Copyright 2025-2026 Siemens Energy AG
 #
 # EMBArk comes with ABSOLUTELY NO WARRANTY.
 #
@@ -15,7 +15,7 @@
 # Description: Prepares dependency packages on the host system for worker update
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
 if [[ ${EUID} -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
@@ -23,21 +23,30 @@ if [[ ${EUID} -ne 0 ]]; then
 fi
 
 echo -e "\n[+] Starting dependency package preparation script"
-echo -e "[*] Dependency Directory: $1"
-echo -e "[*] ZIP Output Path: $2"
-echo -e "[*] Version: $3"
-echo -e "[*] Dependencies Cache: $4\n"
+echo -e "[*] Dependency Directory: ${1}"
+echo -e "[*] ZIP Output Path: ${2}"
+echo -e "[*] Version: ${3}"
+echo -e "[*] Dependencies Cache: ${4}\n"
 
-FILEPATH="$1"   # Directory to store dependency packages
-ZIPPATH="$2"  # Optional: Path to store tar.gz of dependency packages
-VERSION="$3"  # Version of dependencies to download (or "latest")
-DEPSCACHE="$4"  # Optional: Path to cache previously downloaded dependencies
+FILEPATH="${1}"   # Directory to store dependency packages
+ZIPPATH="${2}"  # Optional: Path to store tar.gz of dependency packages
+VERSION="${3}"  # Version of dependencies to download (or "latest")
+DEPSCACHE="${4}"  # Optional: Path to cache previously downloaded dependencies
 
 PKGPATH="${FILEPATH}/pkg"
-IS_UBUNTU=$(awk -F= '/^NAME/{gsub(/"/, "", $2); print $2}' /etc/os-release)
-[[ ${IS_UBUNTU} == "Ubuntu" ]] && IS_UBUNTU=true || IS_UBUNTU=false
-
-echo -e "[*] Detected OS: ${IS_UBUNTU}"
+# shellcheck source=/etc/os-release
+lOS_ID="$(source /etc/os-release; echo "${ID}")"
+echo -e "[*] Detected OS: ${lOS_ID}"
+IS_UBUNTU=false
+if [[ "${lOS_ID}" == "ubuntu" ]]; then
+  IS_UBUNTU=true
+  # shellcheck source=/etc/os-release
+  UBUNTU_CODENAME="$(source /etc/os-release; echo "${UBUNTU_CODENAME}")"
+  # shellcheck source=/etc/os-release
+  VERSION_CODENAME="$(source /etc/os-release; echo "${VERSION_CODENAME}")"
+  echo -e "[*] Detected Ubuntu Codename: ${UBUNTU_CODENAME}"
+  echo -e "[*] Detected Version Codename: ${VERSION_CODENAME}"
+fi
 
 function downloadPackage() {
   echo -e "[*] Downloading packages:" "$@"
@@ -146,7 +155,7 @@ if [ "${VERSION}" = "latest" ] || [ ! -d "${DEPSCACHE}/pkg" ]; then
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         # shellcheck source=/dev/null
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo "${UBUNTU_CODENAME}:-${VERSION_CODENAME}") stable" | \
+        ${UBUNTU_CODENAME}:-${VERSION_CODENAME} stable" | \
         tee /etc/apt/sources.list.d/docker.list > /dev/null
       else
         curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc

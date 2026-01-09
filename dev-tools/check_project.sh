@@ -2,7 +2,7 @@
 
 # EMBArk - The firmware security scanning environment
 #
-# Copyright 2020-2025 Siemens Energy AG
+# Copyright 2020-2026 Siemens Energy AG
 # Copyright 2020-2021 Siemens AG
 #
 # EMBArk comes with ABSOLUTELY NO WARRANTY.
@@ -41,7 +41,7 @@ fi
 
 # check that all tools are installed
 check_tools(){
-  TOOLS=("jshint" "shellcheck" "pylint" "yamllint")
+  TOOLS=("jshint" "shellcheck" "pylint" "yamllint" "semgrep")
   for TOOL in "${TOOLS[@]}";do
     if ! command -v "${TOOL}" > /dev/null ; then
       echo -e "\\n""${RED}""${TOOL} is not installed correctly""${NC}""\\n"
@@ -126,7 +126,7 @@ templatechecker(){
 shellchecker() {
   echo -e "\\n""${ORANGE}""${BOLD}""EMBArk Shellcheck""${NC}""\\n""${BOLD}""=================================================================""${NC}"
   echo -e "\\n""${GREEN}""Find shell scripts and run shellcheck on them:""${NC}""\\n"
-   if [[ "${FAST_EXECUTION:-0}" -eq 1 ]]; then
+  if [[ "${FAST_EXECUTION:-0}" -eq 1 ]]; then
      mapfile -t SH_SCRIPTS < <(git status -s | grep ".*.sh$" | awk '{print $2}' | sort -u)
   else
     mapfile -t SH_SCRIPTS < <(find . -not -path "./emba/*" -not -path "./.*" -not -path "./embark_db/*" -iname "*.sh" 2> /dev/null)
@@ -368,6 +368,32 @@ copy_right_check(){
   fi
 }
 
+semgrep_check(){
+  echo -e "\\n""${ORANGE}""${BOLD}""EMBArk semgrep security check""${NC}""\\n""${BOLD}""=================================================================""${NC}"
+  if [[ "${FAST_EXECUTION:-0}" -eq 1 ]]; then
+    mapfile -t SH_SCRIPTS < <(git status -s | grep ".*.sh$" | awk '{print $2}' | sort -u)
+    if [[ -f ./emba/external/semgrep-rules/bash ]];then
+      semgrep --disable-version-check --metrics=off --config ./emba/external/semgrep-rules/bash --files "${SH_SCRIPTS[@]}" 2>&1
+    else
+      semgrep --config=p/ci --files "${SH_SCRIPTS[@]}"
+    fi
+  else
+    if [[ -f ./emba/external/semgrep-rules/bash ]];then
+      semgrep --disable-version-check --metrics=off --config ./emba/external/semgrep-rules/bash ./embark 2>&1
+    else
+      semgrep --config=p/ci ./embark
+    fi
+  fi
+  RES=$?
+  if [[ ${RES} -eq 0 ]]; then
+    echo -e "${GREEN}""${BOLD}""==> SUCCESS""${NC}""\\n"
+  else
+    echo -e "\\n""${ORANGE}${BOLD}==> FIX ERRORS""${NC}""\\n"
+    ((MODULES_TO_CHECK=MODULES_TO_CHECK+1))
+    MODULES_TO_CHECK_ARR+=( "semgrep findings" )
+  fi
+}
+
 #main
 check_tools
 MODULES_TO_CHECK=0
@@ -388,9 +414,11 @@ list_linter_exceptions "pylint" "${PWD}/embark"
 check_django
 yamlchecker
 openapichecker
+semgrep_check
 
-if [[ "$(date +%Y)" -ne 2025 ]]; then
-  copy_right_check 2025 "${PWD}" "${PWD}/emba_logs"
+
+if [[ "$(date +%Y)" -ne 2026 ]]; then
+  copy_right_check 2026 "${PWD}" "${PWD}/emba_logs"
 fi
 
 if [[ "${#MODULES_TO_CHECK_ARR[@]}" -gt 0 ]]; then

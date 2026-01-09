@@ -3,7 +3,7 @@
 # EMBArk - The firmware security scanning environment
 #
 # Copyright 2025 The AMOS Projects
-# Copyright 2025 Siemens Energy AG
+# Copyright 2025-2026 Siemens Energy AG
 #
 # EMBArk comes with ABSOLUTELY NO WARRANTY.
 #
@@ -13,9 +13,9 @@
 # Contributor(s): Luka Dekanozishvili, Benedikt Kuehne
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
-if [[ ${EUID} -ne 0 ]]; then
+if [[ "${EUID}" -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
 	exit 1
 fi

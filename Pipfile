@@ -35,5 +35,6 @@ pycodestyle = "*"
 djlint = "*"
 pylint-django = "*"
 selenium = "*"
+semgrep = "*"
 
 [requires]

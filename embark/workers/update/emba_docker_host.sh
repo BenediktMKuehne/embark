@@ -1,9 +1,9 @@
 #!/bin/bash
-
+# shellcheck disable=SC2031
 # EMBArk - The firmware security scanning environment
 #
 # Copyright 2025 The AMOS Projects
-# Copyright 2025 Siemens Energy AG
+# Copyright 2025-2026 Siemens Energy AG
 #
 # EMBArk comes with ABSOLUTELY NO WARRANTY.
 #
@@ -13,25 +13,35 @@
 # Contributor(s): Benedikt Kuehne
 
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "${0}")"
 
-if [[ ${EUID} -ne 0 ]]; then
+if [[ "${EUID}" -ne 0 ]]; then
 	echo -e "\n[!!] ERROR: This script has to be run as root\n"
 	exit 1
 fi
 
 echo -e "\n[+] Starting EMBA Docker image preparation script"
-echo -e "[*] Output Directory: $1"
-echo -e "[*] ZIP Output Path: $2"
-echo -e "[*] Version: $3\n"
+echo -e "[*] Output Directory: ${1}"
+echo -e "[*] ZIP Output Path: ${2}"
+echo -e "[*] Version: ${3}\n"
 
-FILEPATH="$1"
-ZIPPATH="$2"
-VERSION="$3"
-IS_UBUNTU=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-[[ ${IS_UBUNTU} == "Ubuntu" ]] && IS_UBUNTU=true || IS_UBUNTU=false
+FILEPATH="${1}"
+ZIPPATH="${2}"
+VERSION="${3}"
 
-echo -e "[*] Detected OS: ${IS_UBUNTU}"
+# shellcheck source=/etc/os-release
+lOS_ID="$(source /etc/os-release; echo "${ID}")"
+echo -e "[*] Detected OS: ${lOS_ID}"
+IS_UBUNTU=false
+if [[ "${lOS_ID}" == "ubuntu" ]]; then
+  IS_UBUNTU=true
+  # shellcheck source=/etc/os-release
+  UBUNTU_CODENAME="$(source /etc/os-release; echo "${UBUNTU_CODENAME}")"
+  # shellcheck source=/etc/os-release
+  VERSION_CODENAME="$(source /etc/os-release; echo "${VERSION_CODENAME}")"
+  echo -e "[*] Detected Ubuntu Codename: ${UBUNTU_CODENAME}"
+  echo -e "[*] Detected Version Codename: ${VERSION_CODENAME}"
+fi
 
 ### Reset
 echo -e "\n[*] Cleaning up previous EMBA Docker files"
@@ -88,7 +98,7 @@ if ! which docker &> /dev/null; then
       curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
       # shellcheck source=/dev/null
       echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-	    $(. /etc/os-release && echo "${UBUNTU_CODENAME}:-${VERSION_CODENAME}") stable" | \
+	    ${UBUNTU_CODENAME}:-${VERSION_CODENAME} stable" | \
 	    tee /etc/apt/sources.list.d/docker.list > /dev/null
     else
       curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc

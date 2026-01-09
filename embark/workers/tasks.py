@@ -25,7 +25,8 @@ from django.utils.timezone import make_aware
 from django.utils import timezone
 from django.conf import settings
 
-from embark.helper import is_ip_local_host
+from embark.helper import is_ip_local_host, get_size
+from uploader.archiver import Archiver
 from workers.models import Worker, Configuration, DependencyVersion, DependencyType, WorkerDependencyVersion
 from workers.update.dependencies import eval_outdated_dependencies, get_script_name, update_dependency, setup_dependency
 from workers.update.update import exec_blocking_ssh, parse_deb_list, process_update_queue, init_sudoers_file, update_dependencies_info, setup_ssh_key, undo_ssh_key, undo_sudoers_file
@@ -53,6 +54,11 @@ def create_periodic_tasks(**kwargs):
         name="Update Worker Information",
         task="workers.tasks.update_worker_info",
     )
+    PeriodicTask.objects.get_or_create(
+        interval=settings.WORKER_LOG_MAX_AGE_DAYS * 24 * 60,  # Convert days to minutes
+        name="Rotate All worker logs",
+        task="workers.tasks.worker_log_rotate"
+    )
 
 
 def update_system_info(worker: Worker):
@@ -72,14 +78,14 @@ def update_system_info(worker: Worker):
         os_info = exec_blocking_ssh(ssh_client, 'grep PRETTY_NAME /etc/os-release', worker.write_log)
         os_info = os_info[len('PRETTY_NAME='):-1].strip('"')
 
-        cpu_info = exec_blocking_ssh(ssh_client, 'nproc')
+        cpu_info = exec_blocking_ssh(ssh_client, 'nproc', worker.write_log)
         cpu_info = cpu_info + " cores"
 
-        ram_info = exec_blocking_ssh(ssh_client, 'free -h | grep Mem')
+        ram_info = exec_blocking_ssh(ssh_client, 'free -h | grep Mem', worker.write_log)
         ram_info = ram_info.split()[1]
-        ram_info = ram_info.replace('Gi', 'GB').replace('Mi', 'MB')
+        ram_info = ram_info.replace('Gi', 'GiB').replace('Mi', 'MiB')
 
-        disk_str = exec_blocking_ssh(ssh_client, "df -h | grep '^/'")
+        disk_str = exec_blocking_ssh(ssh_client, "df -h | grep '^/'", worker.write_log)
         disk_str = disk_str.splitlines()[0].split()
         disk_total = disk_str[1].replace('G', 'GB').replace('M', 'MB')
         disk_free = disk_str[3].replace('G', 'GB').replace('M', 'MB')
@@ -103,6 +109,7 @@ def update_system_info(worker: Worker):
         if ssh_client:
             ssh_client.close()
         worker.save()
+    worker.write_log(f"\nSystem info updated: {system_info}\n")
     return system_info
 
 
@@ -778,8 +785,8 @@ def _update_or_create_worker(config: Configuration, ip_address: str):
             setup_ssh_key(config, worker)
             update_system_info(worker)
             update_dependencies_info(worker)
-        except BaseException:
-            pass
+        except BaseException as all_error:
+            worker.write_log(f"ERROR when updating worker: {all_error}")
 
 
 def _scan_for_worker(config: Configuration, ip_address: str, port: int = 22, timeout: int = 1, ssh_auth_check: bool = True) -> str:
@@ -889,3 +896,27 @@ def config_worker_scan_task(configuration_id: int):
         config.scan_status = Configuration.ScanStatus.ERROR
     finally:
         config.save()
+
+
+def worker_log_rotate():
+    """
+    Rotates worker log files based on settings.WORKER_LOG_MAX_AGE_DAYS
+    """
+    logger.info("Starting worker log rotation task.")
+    workers = Worker.objects.all()
+    for worker in workers:
+        try:
+            if worker.log_location and worker.log_location.exists():
+                if get_size(worker.log_location) > 200000000:  # bigger than 200 MB
+                    logger.info("Rotating log file for worker %s", worker.name)
+                    worker.write_log(f"\nRotating log file...\n")
+                    # archive old log
+                    Archiver.archive_file(worker.log_location)
+                    # delete contents of current log file
+                    with open(worker.log_location, "w", encoding="utf-8") as log_file:
+                        log_file.truncate(0)
+                    logger.info("Log file rotated for worker %s", worker.name)
+                    worker.write_log(f"\nLog file rotated.\n")
+        except Exception as error:
+            logger.error("Error rotating log file for worker %s: %s", worker.name, error)
+            worker.write_log(f"ERROR rotating log file: {error}")

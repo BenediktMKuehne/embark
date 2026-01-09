@@ -1,4 +1,4 @@
-__copyright__ = 'Copyright 2021-2025 Siemens Energy AG, Copyright 2021 The AMOS Projects'
+__copyright__ = 'Copyright 2021-2026 Siemens Energy AG, Copyright 2021 The AMOS Projects'
 __author__ = 'Benedikt Kuehne, Maximilian Wagner, m-1-k-3'
 __license__ = 'MIT'
 
@@ -165,4 +165,23 @@ class Archiver:
             return shutil.copy(src, dst)
         except builtins.Exception as error:
             logger.error("Error copping firmware to active dir: %s", error)
+        return None
+
+    @classmethod
+    def archive_file(file: str, number: int = 1):
+        """
+        archive log file by compressing it with gzip
+
+            :param file: log file to be archived
+            :param number: archive number (used for naming)
+
+            :return: path of archived file on success, None otherwise
+        """
+        try:
+            archived_file = f"{file}.gz.{number}"
+            with open(file, 'rb') as f_in, gzip.open(archived_file, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+            return archived_file
+        except builtins.Exception as error:
+            logger.error("Error archiving log file %s: %s", file, error)
         return None
