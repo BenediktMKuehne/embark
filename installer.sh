@@ -544,9 +544,6 @@ install_embark_dev(){
   echo "root ALL=(ALL) NOPASSWD: /bin/pkill" | EDITOR='tee -a' visudo
   echo "root ALL=(ALL) NOPASSWD: ""${PWD}""/embark/workers/update/" | EDITOR='tee -a' visudo
 
-  # Set some globals
-  echo "NO_UPDATE_CHECK=1" >> /etc/environment
-
   # pipenv
   echo -e "\n${GREEN}""${BOLD}""Install embark python environment""${NC}"
   if [[ "${OS_TYPE}" == "debian" ]]; then

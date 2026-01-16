@@ -29,6 +29,8 @@ celery = {extras = ["redis"], version = "*"}
 django-celery-beat = "*"
 pycryptodome = "*"
 flower = "*"
+gitpython = "*"
+docker = "*"
 
 [dev-packages]
 pycodestyle = "*"

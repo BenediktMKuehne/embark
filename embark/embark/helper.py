@@ -2,11 +2,14 @@ __copyright__ = 'Copyright 2022-2026 Siemens Energy AG, Copyright 2025 The AMOS 
 __author__ = 'Benedikt Kuehne, ashiven'
 __license__ = 'MIT'
 
+import re
 import socket
 from random import randrange
 import os
 from pathlib import Path
 import subprocess
+import git
+import docker
 
 from django.conf import settings
 
@@ -123,31 +126,72 @@ def get_version_strings():
     return embark_version
 
 
-def get_emba_version():
+def get_emba_version() -> dict:
+    """
+    Docstring for get_emba_version
+    
+    :return: version information
+    :rtype: dict
+    """
+    emba_version = ""
+    container_version = ""
+    nvd_version = ""
+    github_emba_version = ""    # commit hash of the github repo
+    latest_emba_version = ""
+    latest_container_version = ""
+    latest_nvd_version = ""
+    latest_github_emba_version = ""
+
     # gets us the currently installed version
+    if not Path(settings.EMBA_ROOT + "/.git").exists():
+        if Path(settings.EMBA_ROOT + "/config/VERSION.txt").exists():
+            with open(Path(settings.EMBA_ROOT + "/config/VERSION.txt"), 'r', encoding='UTF-8') as emba_version_file:
+                emba_version = emba_version_file.read().splitlines()[0]
+        else:
+            emba_version = ""
+    else:
+        # 1 emba version from git tags
+        emba_repo = git.Repo(settings.EMBA_ROOT)
+        emba_version = str(emba_repo.tags[-1])   # latest tag
+        # 2 container version and tag from docker image
+        client = docker.from_env()
+        image_id = client.images.get('embeddedanalyzer/emba:latest').short_id.split(':')[1]
+        image_tags = client.images.get(image_id).tags
+        image_digest = client.images.get(image_id).attrs['RepoDigests'][0]
+        image_sha = re.search(r'@sha256:(\w+)', image_digest).group(1)
+        container_version = f"{image_tags[0]} - {image_sha}"
+        # 3 nvd version from git tags
+        nvd_repo = git.Repo(settings.NVD_ROOT)
+        nvd_version = str(nvd_repo.head.commit.hexsha)
+        # 4 github emba version from git commit hash
+        github_emba_version = str(emba_repo.head.commit.hexsha)
+
+    # latest from onlinechecker
     if Path(settings.EMBA_ROOT + "/external/onlinechecker").exists():
-        # get the latest version nnumbers
+        # get the latest version numbers
         with open(Path(settings.EMBA_ROOT + "/external/onlinechecker/EMBA_VERSION.txt"), 'r', encoding='UTF-8') as emba_version_file:
-            stable_emba_version = emba_version_file.read().splitlines()[0]
+            latest_emba_version = emba_version_file.read().splitlines()[0]
         with open(Path(settings.EMBA_ROOT + "/external/onlinechecker/EMBA_CONTAINER_HASH.txt"), 'r', encoding='UTF-8') as container_version_file:
-            container_version = container_version_file.read().splitlines()[0]
+            latest_container_version = container_version_file.read().splitlines()[0]
         with open(Path(settings.EMBA_ROOT + "/external/onlinechecker/NVD_HASH.txt"), 'r', encoding='UTF-8') as nvd_version_file:
-            nvd_version = nvd_version_file.read().splitlines()[0]
+            latest_nvd_version = nvd_version_file.read().splitlines()[0]
         with open(Path(settings.EMBA_ROOT + "/external/onlinechecker/EMBA_GITHUB_HASH.txt"), 'r', encoding='UTF-8') as emba_github_version_file:
-            github_emba_version = emba_github_version_file.read().splitlines()[0]
+            latest_github_emba_version = emba_github_version_file.read().splitlines()[0]
     else:
-        stable_emba_version = ""
-        container_version = ""
-        nvd_version = ""
-        github_emba_version = ""
+        latest_emba_version = "unknown"
+        latest_container_version = "unknown"
+        latest_nvd_version = "unknown"
+        latest_github_emba_version = "unknown"
 
-    if Path(settings.EMBA_ROOT + "/config/VERSION.txt").exists():
-        with open(Path(settings.EMBA_ROOT + "/config/VERSION.txt"), 'r', encoding='UTF-8') as emba_version_file:
-            emba_version = emba_version_file.read().splitlines()[0]
-    else:
-        emba_version = ""
-
-    return emba_version, stable_emba_version, container_version, nvd_version, github_emba_version
+    return {'emba_version': emba_version, 
+            'container_version': container_version,
+            'nvd_version': nvd_version,
+            'github_emba_version': github_emba_version,
+            'latest_emba_version': latest_emba_version,
+            'latest_container_version': latest_container_version,
+            'latest_nvd_version': latest_nvd_version,
+            'latest_github_emba_version': latest_github_emba_version
+            }
 
 
 def user_is_auth(req_user, own_user):
