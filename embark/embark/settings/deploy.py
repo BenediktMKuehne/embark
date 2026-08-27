@@ -38,6 +38,7 @@ EMAIL_ACTIVE = False
 EMBA_ROOT = os.path.join(BASE_DIR.parent, 'emba')
 EMBA_LOG_ROOT = os.path.join(BASE_DIR.parent, 'emba_logs')
 EMBA_LOG_URL = 'emba_logs/'
+NVD_ROOT = os.path.join(EMBA_ROOT, 'external/nvd-json-data-feeds')
 
 # Application definition - defines what apps gets migrated
 INSTALLED_APPS = [

@@ -34,7 +34,7 @@ def updater_home(request):
         logger.debug("emba_versions: %s", emba_version)
     except Exception as exception:
         logger.error("Failed to get EMBA version: %s", exception)
-        messages.error(request, 'Unable to retrieve EMBA version. Please check the environment setup.')
+        messages.error(request, 'Unable to retrieve EMBA version.'+ str(exception))
         emba_version = {}
     return render(request, 'updater/index.html', {
         'updater_update_form': UpdateForm(),

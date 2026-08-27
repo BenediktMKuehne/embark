@@ -116,14 +116,21 @@ def count_emba_modules(module_dict):
 
 
 def get_version_strings():
-    if Path(f"{settings.BASE_DIR}/VERSION.txt").exists():
-        with open(Path(f"{settings.BASE_DIR}/VERSION.txt"), 'r', encoding='UTF-8') as embark_version_file:
-            embark_version = embark_version_file.read().splitlines()[0]
-    elif Path(f"{settings.BASE_DIR.parent}/VERSION.txt").exists():
+    embark_version = ""
+    try:
         with open(Path(f"{settings.BASE_DIR.parent}/VERSION.txt"), 'r', encoding='UTF-8') as embark_version_file:
             embark_version = embark_version_file.read().splitlines()[0]
-    else:
-        embark_version = ""
+    except FileNotFoundError:
+        embark_version = "filenotfound"
+    """
+    elif Path(f"{settings.BASE_DIR.parent}/VERSION.txt").exists():
+    
+      with open(Path(f"{settings.BASE_DIR}/VERSION.txt"), 'r', encoding='UTF-8') as embark_version_file:
+                embark_version = embark_version_file.read().splitlines()[0]
+
+
+    """
+        
 
     return embark_version
 
