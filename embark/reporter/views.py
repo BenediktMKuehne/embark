@@ -70,8 +70,9 @@ def html_report_path(request, analysis_id, html_path, file):
     The functions needs to either serve html files or provide download of files in the subdirs
     Checks: valid filename, path.resolved in correct parent
     """
+    logger.debug("html_report_path - html_path=%s, file=%s", html_path, file)
     # make sure the html file is valid
-    file_pattern = re.compile(r'^[\w\.-]+\.(tar.gz|html)$')
+    file_pattern = re.compile(r'^[\w\.-]+\.(tar.gz|html|svg|js)$')  # checks only for <name>.<allowed file type>
     if FirmwareAnalysis.objects.filter(id=analysis_id).exists() and bool(re.match(file_pattern, file)):
         analysis = FirmwareAnalysis.objects.get(id=analysis_id)
         if user_is_auth(request.user, analysis.user):
@@ -112,13 +113,37 @@ def html_report_path(request, analysis_id, html_path, file):
                         move(f'{resource_path}.new', resource_path)
                         logger.debug("Removed problematic char from %s", resource_path)
                         return render(request, resource_path, {'embarkBackUrl': reverse('embark-ReportDashboard')}, content_type=content_type)
-                messages.error(request, "Can't server that file")
+                elif file.endswith(".js"):
+                    content_type = "application/javascript"
+                    logger.debug("html_report_path - analysis_id: %s path: %s js_file: %s", analysis_id, html_path, file)
+                    try:
+                       with open(resource_path, 'rb') as requested_file:
+                            response = HttpResponse(requested_file.read(), content_type=content_type)
+                            response['Content-Disposition'] = f'attachment; filename="{file}"'
+                            logger.info("html_report_path - analysis_id: %s html_path: %s js_file: %s", analysis_id, html_path, resource_path)
+                            return response
+                    except FileNotFoundError:
+                        messages.error(request, "File not found on the server")
+                        logger.error("Couldn't find %s", resource_path)
+                        return redirect("embark-ReportDashboard")
+                elif file.endswith(".svg"):
+                    content_type = "image/svg+xml"
+                    logger.debug("html_report_path - analysis_id: %s path: %s svg_file: %s", analysis_id, html_path, file)
+                    try:
+                        with open(resource_path, "rb") as file_:
+                            return HttpResponse(file_.read(), content_type=content_type)
+                    except FileNotFoundError:
+                        messages.error(request, "File not found on the server")
+                        logger.error("Couldn't find %s", resource_path)
+                        return redirect("embark-ReportDashboard")
+
+                messages.error(request, "Can't serve that file type")
                 logger.error("Server can't handle that file - %s", request)
                 return redirect("embark-ReportDashboard")
         messages.error(request, "User not authorized")
         logger.error("User not authorized - %s", request)
         return redirect("embark-ReportDashboard")
-    logger.error("could  not get path - %s", request)
+    logger.error("html_report_path - could not get path - %s", request)
     return redirect("embark-ReportDashboard")
 
 
@@ -155,7 +180,7 @@ def html_report_resource(request, analysis_id, img_file):
                 except IOError as error:
                     logger.error(error)
                     logger.error(request.path)
-    logger.error("could  not get path - %s", request)
+    logger.error("html_report_resource - could not get path - %s", request)
     return redirect("embark-ReportDashboard")
 
 
